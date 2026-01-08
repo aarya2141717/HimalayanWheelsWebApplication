@@ -98,7 +98,6 @@ const Signup = () => {
     setApiError('');
 
     try {
-      const response = await authAPI.signup(data);
       await signup(data);
       navigate('/dashboard');
     } catch (error) {
