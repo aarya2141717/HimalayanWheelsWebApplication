@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -6,6 +7,11 @@ import { z } from 'zod';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 import '../../css/auth.css';
+
+const USER_TYPES = {
+  CUSTOMER: "CUSTOMER",
+  PROVIDER: "PROVIDER",
+};
 
 const SECURITY_QUESTIONS = [
   "What is your mother's maiden name?",
@@ -19,6 +25,9 @@ const SECURITY_QUESTIONS = [
 // Zod validation schema
 const signupSchema = z
   .object({
+    accountType: z.enum(['CUSTOMER', 'PROVIDER'], {
+      errorMap: () => ({ message: 'Please select account type' }),
+    }),
     fullName: z.string().min(2, 'Full name must be at least 2 characters'),
     email: z.string().email('Invalid email address'),
     phone: z
@@ -27,13 +36,39 @@ const signupSchema = z
       .refine((val) => !val.includes('-'), 'Phone number should not contain dashes'),
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
+    companyName: z.string().optional(),
+    companyAddress: z.string().optional(),
     securityQuestion: z.string().min(1, 'Please select a security question'),
     securityAnswer: z.string().min(1, 'Security answer is required'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.accountType === 'PROVIDER') {
+        return data.companyName && data.companyName.length >= 2;
+      }
+      return true;
+    },
+    {
+      message: 'Company name is required for providers',
+      path: ['companyName'],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.accountType === 'PROVIDER') {
+        return data.companyAddress && data.companyAddress.length >= 5;
+      }
+      return true;
+    },
+    {
+      message: 'Company address is required for providers',
+      path: ['companyAddress'],
+    }
+  );
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -50,8 +85,12 @@ const Signup = () => {
     watch,
   } = useForm({
     resolver: zodResolver(signupSchema),
+    defaultValues: {
+      accountType: 'CUSTOMER',
+    },
   });
 
+  const accountType = watch('accountType');
   const securityQuestion = watch('securityQuestion');
 
   const onSubmit = async (data) => {
@@ -91,6 +130,85 @@ const Signup = () => {
           )}
 
           <form onSubmit={handleSubmit(onSubmit)}>
+            {/* Account Type Selection */}
+            <div className="form-group-custom">
+              <label className="form-label-custom">I am a...</label>
+              <div className="account-type-selector">
+                <label className={`account-type-option ${accountType === 'CUSTOMER' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    value="CUSTOMER"
+                    {...register('accountType')}
+                  />
+                  <div className="account-type-content">
+                    <div className="account-type-icon">👤</div>
+                    <div className="account-type-text">
+                      <strong>Customer</strong>
+                      <span>I want to rent vehicles</span>
+                    </div>
+                  </div>
+                </label>
+                <label className={`account-type-option ${accountType === 'PROVIDER' ? 'selected' : ''}`}>
+                  <input
+                    type="radio"
+                    value="PROVIDER"
+                    {...register('accountType')}
+                  />
+                  <div className="account-type-content">
+                    <div className="account-type-icon">🏢</div>
+                    <div className="account-type-text">
+                      <strong>Company/Provider</strong>
+                      <span>I want to provide vehicles</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              {errors.accountType && (
+                <div className="error-message">{errors.accountType.message}</div>
+              )}
+            </div>
+
+            {/* Company Fields (shown only for PROVIDER) */}
+            {accountType === 'PROVIDER' && (
+              <div className="company-fields-section">
+                <div className="section-divider">
+                  <span>Company Information</span>
+                </div>
+                
+                {/* Company Name */}
+                <div className="form-group-custom">
+                  <label className="form-label-custom">Company Name</label>
+                  <input
+                    type="text"
+                    className={`form-control ${errors.companyName ? 'is-invalid' : ''}`}
+                    placeholder="Enter your company name"
+                    {...register('companyName')}
+                  />
+                  {errors.companyName && (
+                    <div className="error-message">{errors.companyName.message}</div>
+                  )}
+                </div>
+
+                {/* Company Address */}
+                <div className="form-group-custom">
+                  <label className="form-label-custom">Company Address</label>
+                  <textarea
+                    className={`form-control ${errors.companyAddress ? 'is-invalid' : ''}`}
+                    placeholder="Enter your company address"
+                    rows="3"
+                    {...register('companyAddress')}
+                  />
+                  {errors.companyAddress && (
+                    <div className="error-message">{errors.companyAddress.message}</div>
+                  )}
+                </div>
+
+                <div className="section-divider">
+                  <span>Contact Information</span>
+                </div>
+              </div>
+            )}
+
             {/* Full Name */}
             <div className="form-group-custom">
               <label className="form-label-custom">Full Name</label>

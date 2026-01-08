@@ -353,6 +353,125 @@
   border-top: 2px solid var(--border-color);
 }
 
+/* Account Type Selector */
+.account-type-selector {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.account-type-option {
+  flex: 1;
+  cursor: pointer;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.2rem;
+  background: white;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.account-type-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.account-type-option:hover {
+  border-color: var(--accent-light);
+  background: rgba(64, 145, 108, 0.03);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.account-type-option.selected {
+  border-color: var(--accent);
+  background: rgba(64, 145, 108, 0.08);
+  box-shadow: 0 0 0 3px rgba(64, 145, 108, 0.15);
+}
+
+.account-type-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.account-type-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.account-type-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.account-type-text strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.account-type-text span {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Section Divider */
+.section-divider {
+  position: relative;
+  margin: 2rem 0 1.5rem;
+  text-align: center;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent 0%, var(--accent-light) 20%, var(--accent-light) 80%, transparent 100%);
+  transform: translateY(-50%);
+}
+
+.section-divider span {
+  background: #fafafa;
+  padding: 0 1rem;
+  position: relative;
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Company Fields Section */
+.company-fields-section {
+  animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+.company-fields-section textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
 /* Security Section */
 .security-section {
   padding-top: 1.5rem;
@@ -361,11 +480,24 @@
   margin-bottom: 1rem;
 }
 
+.security-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.security-header .icon {
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+}
+
 .security-title {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--primary);
-  margin: 0 0 1.5rem 0;
+  margin: 0;
 }
 
 .help-text {
@@ -423,6 +555,27 @@
 
   .form-control, .form-select {
     font-size: 16px;
+  }
+
+  /* Mobile-friendly account type selector */
+  .account-type-selector {
+    flex-direction: column;
+  }
+
+  .account-type-option {
+    padding: 1rem;
+  }
+
+  .account-type-icon {
+    font-size: 1.5rem;
+  }
+
+  .account-type-text strong {
+    font-size: 0.95rem;
+  }
+
+  .account-type-text span {
+    font-size: 0.75rem;
   }
 }
 
