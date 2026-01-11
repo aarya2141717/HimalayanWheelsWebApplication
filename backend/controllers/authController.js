@@ -5,7 +5,11 @@ import jwt from "jsonwebtoken";
 // Generate JWT
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, role: user.role },
+    { 
+      id: user.id, 
+      role: user.role,
+      accountType: user.accountType 
+    },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );

@@ -33,8 +33,7 @@ const Login = () => {
     setApiError('');
 
     try {
-      const response = await authAPI.login(data);
-      await login(data.email, data.password);
+      await login(data);
       navigate('/dashboard');
     } catch (error) {
       setApiError(error.response?.data?.message || 'Login failed. Please try again.');
