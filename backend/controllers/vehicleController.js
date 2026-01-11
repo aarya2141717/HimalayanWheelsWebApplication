@@ -1,0 +1,133 @@
+import Vehicle from "../models/Vehicle.js";
+import User from "../models/User.js";
+
+// Get all vehicles (for customers)
+export const getAllVehicles = async (req, res) => {
+  try {
+    const vehicles = await Vehicle.findAll({
+      where: { available: true },
+      include: [
+        {
+          model: User,
+          as: "provider",
+          attributes: ["id", "fullName", "companyName"],
+        },
+      ],
+    });
+    res.json(vehicles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get vehicles by provider
+export const getProviderVehicles = async (req, res) => {
+  try {
+    const providerId = req.user.id; // from auth middleware
+    const vehicles = await Vehicle.findAll({
+      where: { providerId },
+    });
+    res.json(vehicles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Add new vehicle (provider only)
+export const addVehicle = async (req, res) => {
+  try {
+    const providerId = req.user.id;
+    const { name, type, price, specs } = req.body;
+
+    // Check if user is a provider
+    if (req.user.accountType !== "PROVIDER") {
+      return res.status(403).json({ message: "Only providers can add vehicles" });
+    }
+
+    const vehicle = await Vehicle.create({
+      name,
+      type,
+      price,
+      specs,
+      providerId,
+    });
+
+    res.status(201).json({
+      message: "Vehicle added successfully",
+      vehicle,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update vehicle
+export const updateVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const providerId = req.user.id;
+
+    const vehicle = await Vehicle.findOne({
+      where: { id, providerId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found or unauthorized" });
+    }
+
+    await vehicle.update(req.body);
+    res.json({
+      message: "Vehicle updated successfully",
+      vehicle,
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Delete vehicle
+export const deleteVehicle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const providerId = req.user.id;
+
+    const vehicle = await Vehicle.findOne({
+      where: { id, providerId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found or unauthorized" });
+    }
+
+    await vehicle.destroy();
+    res.json({ message: "Vehicle deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Toggle vehicle availability
+export const toggleAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const providerId = req.user.id;
+
+    const vehicle = await Vehicle.findOne({
+      where: { id, providerId },
+    });
+
+    if (!vehicle) {
+      return res.status(404).json({ message: "Vehicle not found or unauthorized" });
+    }
+
+    vehicle.available = !vehicle.available;
+    await vehicle.save();
+
+    res.json({
+      message: "Vehicle availability updated",
+      vehicle,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
