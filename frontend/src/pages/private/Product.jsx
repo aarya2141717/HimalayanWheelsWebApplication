@@ -1,29 +1,33 @@
 import React from 'react';
+import { useAuth } from '../../context/AuthContext';
+import CustomerDashboard from './CustomerDashboard';
+import ProviderDashboard from './ProviderDashboard';
+import AdminDashboard from './AdminDashboard';
 
 const Product = () => {
-  return (
-    <div className="container py-5">
-      <h1 className="mb-4">Dashboard - Products</h1>
-      <div className="row">
-        <div className="col-md-8">
-          <div className="card">
-            <div className="card-body">
-              <h5 className="card-title">Available Vehicles</h5>
-              <p className="card-text">This is where you would list vehicles or products fetched from the backend using `vehicleAPI`.</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-4">
-          <div className="card">
-            <div className="card-body">
-              <h6>Quick Actions</h6>
-              <p className="small text-muted">Add, edit or view bookings.</p>
-            </div>
-          </div>
-        </div>
+  const { user } = useAuth();
+
+  // Redirect to appropriate dashboard based on user type
+  if (!user) {
+    return (
+      <div className="container py-5">
+        <h3>Loading...</h3>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Show admin dashboard if user is admin
+  if (user.role === 'admin') {
+    return <AdminDashboard />;
+  }
+
+  // Show dashboard based on account type
+  if (user.accountType === 'PROVIDER') {
+    return <ProviderDashboard />;
+  }
+
+  // Default to customer dashboard
+  return <CustomerDashboard />;
 };
 
 export default Product;
