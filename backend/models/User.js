@@ -49,7 +49,7 @@ const User = sequelize.define("User", {
     type: DataTypes.ENUM("CUSTOMER", "PROVIDER"),
     allowNull: false,
   },
-
+ 
   companyName: {
     type: DataTypes.STRING,
     allowNull: true,
@@ -61,10 +61,16 @@ const User = sequelize.define("User", {
   },
 });
 
-// Hash password before save
+// Hash password before save (only if not already hashed)
 User.beforeCreate(async (user) => {
-  user.password = await bcrypt.hash(user.password, 10);
-  user.securityAnswer = await bcrypt.hash(user.securityAnswer, 10);
+  // Only hash if password is not already hashed (check if it starts with $2b$)
+  if (!user.password.startsWith('$2b$')) {
+    user.password = await bcrypt.hash(user.password, 10);
+  }
+  // Only hash if security answer is not already hashed
+  if (!user.securityAnswer.startsWith('$2b$')) {
+    user.securityAnswer = await bcrypt.hash(user.securityAnswer, 10);
+  }
 });
 
 export default User;
