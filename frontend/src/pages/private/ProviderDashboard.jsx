@@ -124,13 +124,13 @@ const ProviderDashboard = () => {
       {/* Header */}
       <div className="dashboard-header">
         <div className="header-content">
-          <h1>Provider Dashboard 🏢</h1>
+          <h1>Provider Dashboard </h1>
           <p className="header-subtitle">
             {user?.companyName || 'Your Company'} - Manage your fleet
           </p>
         </div>
         <div className="user-badge provider-badge">
-          <span className="badge-icon">🏢</span>
+          <span className="badge-icon"></span>
           <span className="badge-text">Provider</span>
         </div>
       </div>
@@ -139,7 +139,7 @@ const ProviderDashboard = () => {
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            🚗
+            
           </div>
           <div className="stat-content">
             <h3>{stats.totalVehicles}</h3>
@@ -148,7 +148,7 @@ const ProviderDashboard = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
-            📅
+            
           </div>
           <div className="stat-content">
             <h3>{stats.activeBookings}</h3>
@@ -157,7 +157,7 @@ const ProviderDashboard = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-            💰
+            
           </div>
           <div className="stat-content">
             <h3>₹{stats.totalRevenue.toLocaleString()}</h3>
@@ -166,7 +166,7 @@ const ProviderDashboard = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
-            ✅
+            
           </div>
           <div className="stat-content">
             <h3>{stats.availableVehicles}</h3>
@@ -234,7 +234,7 @@ const ProviderDashboard = () => {
                         {vehicle.available ? '🔓' : '🔒'}
                       </button>
                       <button className="btn-edit" title="Edit vehicle">
-                        ✏️
+                        
                       </button>
                     </div>
                   </div>
@@ -245,7 +245,7 @@ const ProviderDashboard = () => {
 
           {myVehicles.length === 0 && (
             <div className="empty-state">
-              <div className="empty-icon">🚗</div>
+              <div className="empty-icon"></div>
               <h3>No vehicles yet</h3>
               <p>Add your first vehicle to start earning</p>
               <button
@@ -275,7 +275,7 @@ const ProviderDashboard = () => {
                     </div>
                     <div className="booking-vehicle-name">{booking.vehicleName}</div>
                     <div className="booking-dates">
-                      <span>📅 {booking.bookingDate}</span>
+                      <span> {booking.bookingDate}</span>
                       <span>→</span>
                       <span>{booking.returnDate}</span>
                     </div>
@@ -303,11 +303,11 @@ const ProviderDashboard = () => {
                 Add Vehicle
               </button>
               <button className="action-btn">
-                <span>📊</span>
+                <span></span>
                 View Reports
               </button>
               <button className="action-btn">
-                <span>👤</span>
+                <span></span>
                 Company Profile
               </button>
             </div>
@@ -315,7 +315,7 @@ const ProviderDashboard = () => {
 
           {/* Tips Card */}
           <div className="sidebar-card help-card">
-            <div className="help-icon">💡</div>
+            <div className="help-icon"></div>
             <h4>Pro Tip</h4>
             <p>Keep your vehicles well-maintained and available to maximize bookings</p>
           </div>
@@ -332,7 +332,7 @@ const ProviderDashboard = () => {
             <button className="btn-secondary" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Back to top</button>
           </div>
         </div>
-        <div className="cta-visual">🏔️</div>
+        <div className="cta-visual"></div>
       </section>
 
       {/* Add Vehicle Modal */}

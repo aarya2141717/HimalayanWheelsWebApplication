@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import '../../css/dashboard.css';
 
 const CustomerDashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [vehicles, setVehicles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,7 +140,7 @@ const CustomerDashboard = () => {
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            📅
+            
           </div>
           <div className="stat-content">
             <h3>{stats.activeBookings}</h3>
@@ -147,7 +149,7 @@ const CustomerDashboard = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
-            💰
+            
           </div>
           <div className="stat-content">
             <h3>₹{stats.totalSpent.toLocaleString()}</h3>
@@ -156,7 +158,7 @@ const CustomerDashboard = () => {
         </div>
         <div className="stat-card">
           <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-            🚗
+            
           </div>
           <div className="stat-content">
             <h3>{stats.availableVehicles}</h3>
@@ -168,7 +170,7 @@ const CustomerDashboard = () => {
       {/* Search and Filter Section */}
       <div className="search-filter-section">
         <div className="search-box">
-          <span className="search-icon">🔍</span>
+          <span className="search-icon"></span>
           <input
             type="text"
             placeholder="Search vehicles by name..."
@@ -188,25 +190,25 @@ const CustomerDashboard = () => {
             className={`filter-btn ${filterType === 'Bike' ? 'active' : ''}`}
             onClick={() => setFilterType('Bike')}
           >
-            🏍️ Bikes
+             Bikes
           </button>
           <button
             className={`filter-btn ${filterType === 'Car' ? 'active' : ''}`}
             onClick={() => setFilterType('Car')}
           >
-            🚗 Cars
+             Cars
           </button>
           <button
             className={`filter-btn ${filterType === 'SUV' ? 'active' : ''}`}
             onClick={() => setFilterType('SUV')}
           >
-            🚙 SUVs
+             SUVs
           </button>
           <button
             className={`filter-btn ${filterType === 'Scooter' ? 'active' : ''}`}
             onClick={() => setFilterType('Scooter')}
           >
-            🛵 Scooters
+             Scooters
           </button>
         </div>
       </div>
@@ -256,7 +258,7 @@ const CustomerDashboard = () => {
 
           {filteredVehicles.length === 0 && (
             <div className="empty-state">
-              <div className="empty-icon">🔍</div>
+              <div className="empty-icon"></div>
               <h3>No vehicles found</h3>
               <p>Try adjusting your search or filters</p>
             </div>
@@ -279,7 +281,7 @@ const CustomerDashboard = () => {
                       </span>
                     </div>
                     <div className="booking-dates">
-                      <span>📅 {booking.bookingDate}</span>
+                      <span>{booking.bookingDate}</span>
                       <span>→</span>
                       <span>{booking.returnDate}</span>
                     </div>
@@ -290,7 +292,7 @@ const CustomerDashboard = () => {
             ) : (
               <div className="empty-bookings">
                 <p>No active bookings</p>
-                <span className="empty-icon">📋</span>
+                <span className="empty-icon"></span>
               </div>
             )}
           </div>
@@ -300,15 +302,15 @@ const CustomerDashboard = () => {
             <h3 className="sidebar-title">Quick Actions</h3>
             <div className="quick-actions">
               <button className="action-btn">
-                <span>📜</span>
+                <span></span>
                 Booking History
               </button>
               <button className="action-btn">
-                <span>👤</span>
+                <span></span>
                 My Profile
               </button>
               <button className="action-btn">
-                <span>💬</span>
+                <span></span>
                 Support
               </button>
             </div>
@@ -316,13 +318,26 @@ const CustomerDashboard = () => {
 
           {/* Help Card */}
           <div className="sidebar-card help-card">
-            <div className="help-icon">💡</div>
+            <div className="help-icon"></div>
             <h4>Need Help?</h4>
             <p>Contact our support team for assistance</p>
             <button className="btn-help">Get Support</button>
           </div>
         </div>
       </div>
+
+      {/* Homepage CTA */}
+      <section className="homepage-cta">
+        <div className="cta-text">
+          <h2>Looking for more options?</h2>
+          <p>Head back to the homepage to explore featured vehicles, offers, and helpful resources.</p>
+          <div className="cta-actions">
+            <button className="btn-primary" onClick={() => navigate('/')}>Go to homepage</button>
+            <button className="btn-secondary" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Back to top</button>
+          </div>
+        </div>
+        <div className="cta-visual"></div>
+      </section>
 
       {/* Booking Modal */}
       {showBookingModal && selectedVehicle && (
