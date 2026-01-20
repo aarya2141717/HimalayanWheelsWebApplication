@@ -6,6 +6,7 @@ import PrivateRoute from './routes/privateRoute';
 import PublicRoute from './routes/publicRoute';
 
 // Lazy load pages
+const Homepage = lazy(() => import('./pages/public/Homepage'));
 const PublicLogin = lazy(() => import('./pages/public/Login'));
 const PublicRegister = lazy(() => import('./pages/public/Register'));
 const Product = lazy(() => import('./pages/private/Product'));
@@ -20,8 +21,15 @@ const LoadingFallback = () => (
   </div>
 );
 
-// Layout for private routes (with navbar)
+// Layouts
 const PrivateLayout = () => (
+  <>
+    <Navbar />
+    <Outlet />
+  </>
+);
+
+const PublicAuthLayout = () => (
   <>
     <Navbar />
     <Outlet />
@@ -35,9 +43,12 @@ function App() {
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Public pages */}
-            <Route path="/login" element={<PublicRoute><PublicLogin /></PublicRoute>} />
-            <Route path="/signup" element={<PublicRoute><PublicRegister /></PublicRoute>} />
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Homepage />} />
+
+            <Route element={<PublicAuthLayout />}>
+              <Route path="/login" element={<PublicRoute><PublicLogin /></PublicRoute>} />
+              <Route path="/signup" element={<PublicRoute><PublicRegister /></PublicRoute>} />
+            </Route>
 
             {/* Private pages with Navbar */}
             <Route element={<PrivateLayout />}>
