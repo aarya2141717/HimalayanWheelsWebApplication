@@ -4,27 +4,33 @@ import jwt from "jsonwebtoken";
 
 // Generate JWT
 const generateToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not defined");
+  }
+
   return jwt.sign(
-    { 
-      id: user.id, 
+    {
+      id: user.id || user.dataValues?.id,
       role: user.role,
-      accountType: user.accountType 
+      accountType: user.accountType,
     },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );
 };
 
+
 // SIGNUP
 export const signup = async (req, res) => {
   try {
     const user = await User.create(req.body);
     const token = generateToken(user);
+    const { password, securityAnswer, ...safeUser } = user.dataValues;
 
     res.status(201).json({
       message: "Signup successful",
       token,
-      user,
+      user:safeUser,
     });
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -44,11 +50,12 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
 
     const token = generateToken(user);
+    const { password: pwd, securityAnswer, ...safeUser } = user.dataValues;
 
     res.json({
       message: "Login successful",
       token,
-      user,
+      user:safeUser,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

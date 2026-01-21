@@ -31,6 +31,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/bookings", bookingRoutes);
 
+
+
 app.get("/", (req, res) => {
   res.send("Himalayan Wheels Backend Running 🚗");
 });

@@ -48,8 +48,14 @@ const Login = () => {
       const response = await authAPI.login(formData);
       console.log('Login successful:', response.data);
       
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (response.data?.token) {
+  localStorage.setItem('token', response.data.token);
+  localStorage.setItem('user', JSON.stringify(response.data.user));
+} else {
+  throw new Error("Token not received from server");
+}
+
+      
       
       alert('Login successful! Welcome back!');
       window.location.href = '/dashboard';

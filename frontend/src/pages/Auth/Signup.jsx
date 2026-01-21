@@ -1,3 +1,5 @@
+console.log("ACTIVE SIGNUP: Auth/Signup.jsx");
+
 import React, { useState } from 'react';
 import { authAPI } from '../../services/api';
 import './Auth.css';
