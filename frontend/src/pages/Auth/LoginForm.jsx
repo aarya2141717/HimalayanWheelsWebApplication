@@ -106,9 +106,13 @@ const Login = () => {
 
             {/* Forgot Password Link */}
             <div className="forgot-password-link">
-              <a href="#" className="link-custom">
+              <button
+                type="button"
+                className="link-custom"
+                onClick={() => navigate('/forgot-password')}
+              >
                 Forgot Password?
-              </a>
+              </button>
             </div>
 
             {/* Submit Button */}

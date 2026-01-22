@@ -9,6 +9,7 @@ import PublicRoute from './routes/publicRoute';
 const Homepage = lazy(() => import('./pages/public/Homepage'));
 const PublicLogin = lazy(() => import('./pages/public/Login'));
 const PublicRegister = lazy(() => import('./pages/public/Register'));
+const ForgotPassword = lazy(() => import('./pages/Auth/ForgotPassword'));
 const Product = lazy(() => import('./pages/private/Product'));
 const Feedback = lazy(() => import('./pages/private/Feedback'));
 
@@ -48,6 +49,7 @@ function App() {
             <Route element={<PublicAuthLayout />}>
               <Route path="/login" element={<PublicRoute><PublicLogin /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><PublicRegister /></PublicRoute>} />
+              <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             </Route>
 
             {/* Private pages with Navbar */}

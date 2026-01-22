@@ -41,6 +41,9 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -64,24 +67,63 @@ export const login = async (req, res) => {
 
 // VERIFY SECURITY ANSWER
 export const verifySecurity = async (req, res) => {
-  const { email, securityAnswer } = req.body;
+  try {
+    const { email, securityAnswer } = req.body;
+    if (!email || !securityAnswer) {
+      return res.status(400).json({ message: "Email and security answer are required" });
+    }
 
-  const user = await User.findOne({ where: { email } });
-  if (!user) return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  const isMatch = await bcrypt.compare(securityAnswer, user.securityAnswer);
-  if (!isMatch)
-    return res.status(401).json({ message: "Wrong answer" });
+    const isMatch = await bcrypt.compare(securityAnswer, user.securityAnswer);
+    if (!isMatch)
+      return res.status(401).json({ message: "Wrong answer" });
 
-  res.json({ message: "Verified" });
+    res.json({ message: "Verified" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 // RESET PASSWORD
 export const resetPassword = async (req, res) => {
-  const { email, newPassword } = req.body;
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: "Email and new password are required" });
+    }
 
-  const hashed = await bcrypt.hash(newPassword, 10);
-  await User.update({ password: hashed }, { where: { email } });
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  res.json({ message: "Password reset successful" });
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await User.update({ password: hashed }, { where: { email } });
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
+// GET SECURITY QUESTION
+export const getSecurityQuestion = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      securityQuestion: user.securityQuestion,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
