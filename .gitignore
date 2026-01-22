@@ -1,1 +1,19 @@
 node_modules/
+
+# Documentation files (not to be pushed to GitHub)
+*.txt
+*.md
+!README.md
+!package.json
+!package-lock.json
+
+# Environment files
+.env
+.env.local
+
+# Uploads directory (images will be managed separately)
+backend/uploads/
+
+# Build files
+frontend/dist/
+frontend/build/
