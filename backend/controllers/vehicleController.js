@@ -37,18 +37,23 @@ export const getProviderVehicles = async (req, res) => {
 export const addVehicle = async (req, res) => {
   try {
     const providerId = req.user.id;
-    const { name, type, price, specs } = req.body;
+    const { name, type, price, specs, description } = req.body;
 
     // Check if user is a provider
     if (req.user.accountType !== "PROVIDER") {
       return res.status(403).json({ message: "Only providers can add vehicles" });
     }
 
+    // Handle image upload
+    const image = req.file ? `/uploads/vehicles/${req.file.filename}` : null;
+
     const vehicle = await Vehicle.create({
       name,
       type,
       price,
       specs,
+      description,
+      image,
       providerId,
     });
 
@@ -75,7 +80,13 @@ export const updateVehicle = async (req, res) => {
       return res.status(404).json({ message: "Vehicle not found or unauthorized" });
     }
 
-    await vehicle.update(req.body);
+    // Handle image upload if new image is provided
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.image = `/uploads/vehicles/${req.file.filename}`;
+    }
+
+    await vehicle.update(updateData);
     res.json({
       message: "Vehicle updated successfully",
       vehicle,

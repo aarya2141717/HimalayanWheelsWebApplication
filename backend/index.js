@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { connectDB, sequelize } from "./db/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
@@ -10,6 +13,9 @@ import Vehicle from "./models/Vehicle.js";
 import Booking from "./models/Booking.js";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Define model relationships
 User.hasMany(Vehicle, { foreignKey: "providerId", as: "vehicles" });
@@ -26,6 +32,9 @@ Booking.belongsTo(Vehicle, { foreignKey: "vehicleId", as: "vehicle" });
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);

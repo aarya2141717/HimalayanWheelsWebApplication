@@ -42,6 +42,16 @@ const Vehicle = sequelize.define("Vehicle", {
     },
   },
 
+  image: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+
   totalBookings: {
     type: DataTypes.INTEGER,
     defaultValue: 0,

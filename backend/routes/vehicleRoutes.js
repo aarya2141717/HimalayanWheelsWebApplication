@@ -8,6 +8,7 @@ import {
   toggleAvailability,
 } from "../controllers/vehicleController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { upload } from "../middleware/multerConfig.js";
 
 const router = express.Router();
 
@@ -16,8 +17,8 @@ router.get("/", getAllVehicles);
 
 // Protected routes (require authentication)
 router.get("/my-vehicles", protect, getProviderVehicles);
-router.post("/", protect, addVehicle);
-router.put("/:id", protect, updateVehicle);
+router.post("/", protect, upload.single("image"), addVehicle);
+router.put("/:id", protect, upload.single("image"), updateVehicle);
 router.delete("/:id", protect, deleteVehicle);
 router.patch("/:id/toggle-availability", protect, toggleAvailability);
 
