@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { vehicleAPI } from '../../services/api';
+import { vehicleAPI, bookingAPI } from '../../services/api';
 import '../../css/dashboard.css';
 
 const ProviderDashboard = () => {
@@ -9,7 +9,16 @@ const ProviderDashboard = () => {
   const { user } = useAuth();
   const [myVehicles, setMyVehicles] = useState([]);
   const [bookings, setBookings] = useState([]);
+  const [stats, setStats] = useState({
+    totalVehicles: 0,
+    activeBookings: 0,
+    totalRevenue: 0,
+    availableVehicles: 0,
+  });
   const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
+  const [showEditVehicleModal, setShowEditVehicleModal] = useState(false);
+  const [editVehicle, setEditVehicle] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [newVehicle, setNewVehicle] = useState({
@@ -21,68 +30,59 @@ const ProviderDashboard = () => {
     image: null,
   });
 
-  // Hardcoded sample vehicles
-  const hardcodedVehicles = [
-    {
-      id: 'sample-1',
-      name: 'Royal Enfield Himalayan',
-      type: 'Bike',
-      price: 1500,
-      image: null,
-      available: true,
-      specs: '411cc, Adventure Bike',
-      totalBookings: 12,
-      revenue: 18000,
-      isHardcoded: true,
-    },
-    {
-      id: 'sample-2',
-      name: 'KTM Duke 390',
-      type: 'Bike',
-      price: 1800,
-      image: null,
-      available: true,
-      specs: '373cc, Sport Bike',
-      totalBookings: 8,
-      revenue: 14400,
-      isHardcoded: true,
-    },
-  ];
-
-  // Fetch vehicles from backend
+  // Fetch vehicles and bookings from backend
   useEffect(() => {
     fetchMyVehicles();
+    fetchMyBookings();
+    fetchStats();
   }, []);
 
   const fetchMyVehicles = async () => {
     try {
       const response = await vehicleAPI.getMyVehicles();
-      const dbVehicles = response.data || [];
-      // Combine hardcoded + real vehicles
-      setMyVehicles([...hardcodedVehicles, ...dbVehicles]);
+      setMyVehicles(response.data || []);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      // Show only hardcoded if backend fails
-      setMyVehicles(hardcodedVehicles);
+    }
+  };
+
+  const fetchMyBookings = async () => {
+    try {
+      const response = await bookingAPI.getProviderBookings();
+      setBookings(response.data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const [bookingStatsRes, vehiclesRes] = await Promise.all([
+        bookingAPI.getBookingStats(),
+        vehicleAPI.getMyVehicles(),
+      ]);
+
+      const vehicles = vehiclesRes.data || [];
+      
+      setStats({
+        totalVehicles: vehicles.length,
+        activeBookings: bookingStatsRes.data.activeBookings || 0,
+        totalRevenue: bookingStatsRes.data.totalRevenue || 0,
+        availableVehicles: vehicles.filter(v => v.available).length,
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
     }
   };
 
   const getVehicleImageUrl = (vehicle) => {
-    // If vehicle has image from database
-    if (vehicle.image && !vehicle.isHardcoded) {
-      return `http://localhost:5000${vehicle.image}`;
+    if (vehicle?.image) {
+      const img = vehicle.image;
+      if (img.startsWith('http')) return img;
+      if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+      return `http://localhost:5000/uploads/vehicles/${img}`;
     }
-    
-    // Hardcoded vehicle images
-    const imageMap = {
-      'Royal Enfield Himalayan': '/images/royalenfield himalayan.png',
-      'KTM Duke 390': '/images/ktmduke390.png',
-      'Honda Activa': '/images/hondaactiva.png',
-      'Mahindra Thar': '/images/mahindrathar.png',
-      'Maruti Suzuki Swift': '/images/marutisuzukiswift.png',
-    };
-    
-    return imageMap[vehicle.name] || '/images/background_image.png';
+    return '/images/background_image.png';
   };
 
   const handleImageChange = (e) => {
@@ -121,8 +121,9 @@ const ProviderDashboard = () => {
 
       const response = await vehicleAPI.addVehicle(formData);
       
-      // Add new vehicle to state (remove hardcoded ones if adding real ones)
-      setMyVehicles([...hardcodedVehicles, ...myVehicles.filter(v => !v.isHardcoded), response.data.vehicle]);
+      // Refresh vehicles list
+      await fetchMyVehicles();
+      await fetchStats();
       
       // Reset form
       setShowAddVehicleModal(false);
@@ -139,17 +140,10 @@ const ProviderDashboard = () => {
   };
 
   const toggleAvailability = async (id) => {
-    // Don't allow toggling hardcoded vehicles
-    if (id.toString().startsWith('sample-')) {
-      alert('Cannot modify sample vehicles');
-      return;
-    }
-
     try {
       await vehicleAPI.toggleAvailability(id);
-      setMyVehicles(
-        myVehicles.map((v) => (v.id === id ? { ...v, available: !v.available } : v))
-      );
+      await fetchMyVehicles();
+      await fetchStats();
     } catch (error) {
       console.error('Error toggling availability:', error);
       alert('Failed to update availability');
@@ -157,17 +151,12 @@ const ProviderDashboard = () => {
   };
 
   const handleDeleteVehicle = async (id) => {
-    // Don't allow deleting hardcoded vehicles
-    if (id.toString().startsWith('sample-')) {
-      alert('Cannot delete sample vehicles');
-      return;
-    }
-
     if (!window.confirm('Are you sure you want to delete this vehicle?')) return;
     
     try {
       await vehicleAPI.deleteVehicle(id);
-      setMyVehicles(myVehicles.filter((v) => v.id !== id));
+      await fetchMyVehicles();
+      await fetchStats();
       alert('Vehicle deleted successfully');
     } catch (error) {
       console.error('Error deleting vehicle:', error);
@@ -175,11 +164,78 @@ const ProviderDashboard = () => {
     }
   };
 
-  const stats = {
-    totalVehicles: myVehicles.length,
-    activeBookings: bookings.filter((b) => b.status === 'Confirmed').length,
-    totalRevenue: myVehicles.reduce((sum, v) => sum + (parseFloat(v.revenue) || 0), 0),
-    availableVehicles: myVehicles.filter((v) => v.available).length,
+  const openEditVehicle = (vehicle) => {
+    setEditVehicle({ ...vehicle, image: null });
+    setEditImagePreview(getVehicleImageUrl(vehicle));
+    setShowEditVehicleModal(true);
+  };
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+      }
+      setEditVehicle({ ...editVehicle, image: file });
+      const reader = new FileReader();
+      reader.onloadend = () => setEditImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpdateVehicle = async (e) => {
+    e.preventDefault();
+    if (!editVehicle) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editVehicle.name);
+      formData.append('type', editVehicle.type);
+      formData.append('price', editVehicle.price);
+      formData.append('specs', editVehicle.specs || '');
+      formData.append('description', editVehicle.description || '');
+      if (editVehicle.image) {
+        formData.append('image', editVehicle.image);
+      }
+      await vehicleAPI.updateVehicle(editVehicle.id, formData);
+      await fetchMyVehicles();
+      await fetchStats();
+      setShowEditVehicleModal(false);
+      alert('Vehicle updated successfully');
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+      alert(error.response?.data?.message || 'Failed to update vehicle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (bookingId, newStatus) => {
+    try {
+      await bookingAPI.updateBookingStatus(bookingId, newStatus);
+      alert('✅ Booking status updated!');
+      await fetchMyBookings();
+      await fetchStats();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      alert('Failed to update booking status');
+    }
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status) {
+      case 'Confirmed':
+        return 'status-confirmed';
+      case 'Pending':
+        return 'status-pending';
+      case 'Cancelled':
+        return 'status-cancelled';
+      case 'Completed':
+        return 'status-completed';
+      default:
+        return 'status-active';
+    }
   };
 
   return (
@@ -264,9 +320,6 @@ const ProviderDashboard = () => {
                       e.target.src = '/images/background_image.png';
                     }}
                   />
-                  {vehicle.isHardcoded && (
-                    <span className="sample-badge">Sample</span>
-                  )}
                 </div>
                 <div className="vehicle-info">
                   <div className="vehicle-header-row">
@@ -292,24 +345,27 @@ const ProviderDashboard = () => {
                       <span className="price-period">/day</span>
                     </div>
                     <div className="vehicle-actions">
-                      {!vehicle.isHardcoded && (
-                        <>
-                          <button
-                            className="btn-toggle"
-                            onClick={() => toggleAvailability(vehicle.id)}
-                            title={vehicle.available ? 'Mark as unavailable' : 'Mark as available'}
-                          >
-                            {vehicle.available ? '🔓' : '🔒'}
-                          </button>
-                          <button 
-                            className="btn-delete" 
-                            onClick={() => handleDeleteVehicle(vehicle.id)}
-                            title="Delete vehicle"
-                          >
-                            🗑️
-                          </button>
-                        </>
-                      )}
+                      <button
+                        className="btn-toggle"
+                        onClick={() => toggleAvailability(vehicle.id)}
+                        title={vehicle.available ? 'Make Unavailable' : 'Make Available'}
+                      >
+                        {vehicle.available ? 'Make Unavailable' : 'Make Available'}
+                      </button>
+                      <button
+                        className="btn-edit-booking"
+                        onClick={() => openEditVehicle(vehicle)}
+                        title="Edit vehicle"
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        className="btn-cancel-booking" 
+                        onClick={() => handleDeleteVehicle(vehicle.id)}
+                        title="Delete vehicle"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -336,24 +392,51 @@ const ProviderDashboard = () => {
         <div className="sidebar-section">
           {/* Recent Bookings */}
           <div className="sidebar-card">
-            <h3 className="sidebar-title">Recent Bookings</h3>
+            <h3 className="sidebar-title">My Bookings ({bookings.length})</h3>
             {bookings.length > 0 ? (
               <div className="bookings-list">
                 {bookings.map((booking) => (
                   <div key={booking.id} className="booking-item">
                     <div className="booking-header">
-                      <span className="booking-customer">{booking.customerName}</span>
-                      <span className={`booking-status status-${booking.status.toLowerCase()}`}>
+                      <span className="booking-customer">
+                        👤 {booking.customer?.fullName || 'Customer'}
+                      </span>
+                      <span className={`booking-status ${getStatusBadgeClass(booking.status)}`}>
                         {booking.status}
                       </span>
                     </div>
-                    <div className="booking-vehicle-name">{booking.vehicleName}</div>
-                    <div className="booking-dates">
-                      <span>📅 {booking.bookingDate}</span>
-                      <span>→</span>
-                      <span>{booking.returnDate}</span>
+                    <div className="booking-vehicle-name">
+                      🚗 {booking.vehicle?.name || 'Vehicle'}
                     </div>
-                    <div className="booking-cost">₹{booking.amount.toLocaleString()}</div>
+                    <div className="booking-dates">
+                      <span>📅 {new Date(booking.bookingDate).toLocaleDateString()}</span>
+                      <span>→</span>
+                      <span>{new Date(booking.returnDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="booking-cost">💰 ₹{booking.totalCost?.toLocaleString() || 0}</div>
+                    {booking.status !== 'Cancelled' && booking.status !== 'Completed' && (
+                      <div className="booking-actions" style={{ marginTop: '0.75rem' }}>
+                        <select 
+                          className="status-select"
+                          value={booking.status}
+                          onChange={(e) => handleStatusChange(booking.id, e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.5rem',
+                            borderRadius: '8px',
+                            border: '2px solid #e2e8f0',
+                            fontSize: '0.85rem',
+                            cursor: 'pointer',
+                            background: 'white',
+                          }}
+                        >
+                          <option value="Pending">⏳ Pending</option>
+                          <option value="Confirmed">✅ Confirmed</option>
+                          <option value="Completed">✔️ Completed</option>
+                          <option value="Cancelled">❌ Cancelled</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -369,21 +452,11 @@ const ProviderDashboard = () => {
           <div className="sidebar-card">
             <h3 className="sidebar-title">Quick Actions</h3>
             <div className="quick-actions">
-              <button
-                className="action-btn"
-                onClick={() => setShowAddVehicleModal(true)}
-              >
-                <span>➕</span>
+              <button className="action-btn" onClick={() => setShowAddVehicleModal(true)}>
                 Add Vehicle
               </button>
-              <button className="action-btn" onClick={() => navigate('/')}>
-                <span>🏠</span>
-                View Homepage
-              </button>
-              <button className="action-btn">
-                <span>📊</span>
-                View Reports
-              </button>
+              <button className="action-btn" onClick={() => navigate('/')}>Go to homepage</button>
+              <button className="action-btn" onClick={() => window.location.reload()}>Refresh data</button>
             </div>
           </div>
 
@@ -514,6 +587,110 @@ const ProviderDashboard = () => {
                 <button type="submit" className="btn-primary" disabled={loading}>
                   {loading ? 'Adding...' : 'Add Vehicle'}
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Vehicle Modal */}
+      {showEditVehicleModal && editVehicle && (
+        <div className="modal-overlay" onClick={() => !loading && setShowEditVehicleModal(false)}>
+          <div className="modal-content vehicle-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Vehicle</h2>
+              <button
+                className="modal-close"
+                onClick={() => !loading && setShowEditVehicleModal(false)}
+                disabled={loading}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleUpdateVehicle}>
+              <div className="modal-body">
+                <div className="form-group image-upload-section">
+                  <label>Vehicle Image</label>
+                  <div className="image-upload-container">
+                    <input
+                      type="file"
+                      id="editVehicleImage"
+                      accept="image/*"
+                      onChange={handleEditImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="editVehicleImage" className="image-upload-label">
+                      {editImagePreview ? (
+                        <img src={editImagePreview} alt="Preview" className="image-preview" />
+                      ) : (
+                        <div className="image-upload-placeholder">
+                          <span>Click to upload image</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vehicle Name *</label>
+                    <input
+                      type="text"
+                      value={editVehicle.name}
+                      onChange={(e) => setEditVehicle({ ...editVehicle, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Vehicle Type *</label>
+                    <select
+                      value={editVehicle.type}
+                      onChange={(e) => setEditVehicle({ ...editVehicle, type: e.target.value })}
+                      required
+                    >
+                      <option value="Bike">Bike</option>
+                      <option value="Scooter">Scooter</option>
+                      <option value="Car">Car</option>
+                      <option value="SUV">SUV</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Price per day (₹) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editVehicle.price}
+                      onChange={(e) => setEditVehicle({ ...editVehicle, price: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Specs</label>
+                    <input
+                      type="text"
+                      value={editVehicle.specs || ''}
+                      onChange={(e) => setEditVehicle({ ...editVehicle, specs: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    rows="3"
+                    value={editVehicle.description || ''}
+                    onChange={(e) => setEditVehicle({ ...editVehicle, description: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="btn-secondary" type="button" onClick={() => setShowEditVehicleModal(false)} disabled={loading}>Cancel</button>
+                <button className="btn-primary" type="submit" disabled={loading}>{loading ? 'Saving...' : 'Save changes'}</button>
               </div>
             </form>
           </div>

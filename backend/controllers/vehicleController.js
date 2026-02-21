@@ -72,8 +72,9 @@ export const updateVehicle = async (req, res) => {
     const { id } = req.params;
     const providerId = req.user.id;
 
+    // Allow admin to edit any vehicle
     const vehicle = await Vehicle.findOne({
-      where: { id, providerId },
+      where: req.user.role === 'admin' ? { id } : { id, providerId },
     });
 
     if (!vehicle) {
@@ -102,8 +103,9 @@ export const deleteVehicle = async (req, res) => {
     const { id } = req.params;
     const providerId = req.user.id;
 
+    // Allow admin to delete any vehicle
     const vehicle = await Vehicle.findOne({
-      where: { id, providerId },
+      where: req.user.role === 'admin' ? { id } : { id, providerId },
     });
 
     if (!vehicle) {
@@ -123,8 +125,9 @@ export const toggleAvailability = async (req, res) => {
     const { id } = req.params;
     const providerId = req.user.id;
 
+    // Allow admin to toggle any vehicle
     const vehicle = await Vehicle.findOne({
-      where: { id, providerId },
+      where: req.user.role === 'admin' ? { id } : { id, providerId },
     });
 
     if (!vehicle) {

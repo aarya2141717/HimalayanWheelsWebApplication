@@ -32,4 +32,15 @@ export const vehicleAPI = {
   toggleAvailability: (id) => api.patch(`/vehicles/${id}/toggle-availability`),
 };
 
+export const bookingAPI = {
+  createBooking: (data) => api.post("/bookings", data),
+  getCustomerBookings: () => api.get("/bookings/customer"),
+  getProviderBookings: () => api.get("/bookings/provider"),
+  getAllBookings: () => api.get("/bookings/all"),
+  getBookingStats: () => api.get("/bookings/stats"),
+  updateBooking: (id, data) => api.put(`/bookings/${id}`, data),
+  updateBookingStatus: (id, status) => api.patch(`/bookings/${id}/status`, { status }),
+  cancelBooking: (id) => api.delete(`/bookings/${id}`),
+};
+
 export default api;
