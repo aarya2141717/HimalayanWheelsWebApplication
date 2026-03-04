@@ -16,37 +16,6 @@ const Homepage = () => {
   const [allVehicles, setAllVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const hardcodedVehicles = [
-    {
-      id: 1, 
-      name: 'Royal Enfield Himalayan',
-      type: 'Bike',
-      price: 1500,
-      image: '/images/royalenfield himalayan.png',
-    },
-    {
-      id: 2,
-      name: 'Mahindra Thar',
-      type: 'SUV',
-      price: 5000,
-      image: '/images/mahindrathar.png',
-    },
-    {
-      id: 3,
-      name: 'KTM Duke 390',
-      type: 'Bike',
-      price: 1800,
-      image: '/images/ktmduke390.png',
-    },
-    {
-      id: 4,
-      name: 'Honda Activa',
-      type: 'Scooter',
-      price: 800,
-      image: '/images/hondaactiva.png',
-    },
-  ];
-
   const features = [
     { icon: '🚗', title: 'Wide Range of Vehicles', desc: 'Bikes, cars, and SUVs for every need' },
     { icon: '💰', title: 'Affordable Pricing', desc: 'Competitive rates for all budgets' },
@@ -91,24 +60,17 @@ const Homepage = () => {
       try {
         setLoading(true);
         const response = await vehicleAPI.getAllVehicles();
-        if (response.data && response.data.length > 0) {
-          // Add database vehicles to hardcoded ones
-          const dbVehicles = response.data.map(v => ({
-            id: v.id,
-            name: v.name,
-            type: v.type,
-            price: v.price,
-            image: v.image, // keep raw value from API; resolve at render time
-            isFromDB: true,
-          }));
-          // Combine hardcoded + database vehicles
-          setAllVehicles([...hardcodedVehicles, ...dbVehicles]);
-        } else {
-          setAllVehicles(hardcodedVehicles);
-        }
+        const dbVehicles = (response.data || []).map(v => ({
+          id: v.id,
+          name: v.name,
+          type: v.type,
+          price: v.price,
+          image: v.image,
+        }));
+        setAllVehicles(dbVehicles);
       } catch (error) {
-        console.log('Note: Could not fetch database vehicles, showing hardcoded only', error.message);
-        setAllVehicles(hardcodedVehicles);
+        console.log('Note: Could not fetch vehicles from database', error.message);
+        setAllVehicles([]);
       } finally {
         setLoading(false);
       }
@@ -117,20 +79,16 @@ const Homepage = () => {
     fetchVehicles();
   }, []);
 
-  // Resolve correct image URL for both hardcoded and DB vehicles
+  // Resolve correct image URL for vehicles
   const getVehicleImageUrl = (vehicle) => {
-    if (vehicle?.isFromDB) {
-      const img = vehicle.image;
-      if (!img) return '/images/background_image.png';
-      if (typeof img === 'string') {
-        if (img.startsWith('http')) return img;
-        if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
-        return `http://localhost:5000/uploads/vehicles/${img}`;
-      }
-      return '/images/background_image.png';
+    const img = vehicle?.image;
+    if (!img) return '/images/background_image.png';
+    if (typeof img === 'string') {
+      if (img.startsWith('http')) return img;
+      if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+      return `http://localhost:5000/uploads/vehicles/${img}`;
     }
-    // Hardcoded vehicles already point to /images/... paths
-    return vehicle?.image || '/images/background_image.png';
+    return '/images/background_image.png';
   };
 
   const handleSearch = (e) => {
@@ -270,33 +228,38 @@ const Homepage = () => {
               Loading vehicles...
             </div>
           ) : (
-            <div className="vehicles-grid">
-              {allVehicles.map((vehicle) => (
-                <div key={`${vehicle.isFromDB ? 'db' : 'hw'}-${vehicle.id}`} className="vehicle-card-home">
-                  <div className="vehicle-image-wrapper">
-                    <img
-                      src={getVehicleImageUrl(vehicle)}
-                      alt={vehicle.name}
-                      onError={(e) => {
-                        e.target.src = '/images/background_image.png';
-                      }}
-                    />
-                    {vehicle.isFromDB && <span className="new-badge" style={{ position: 'absolute', top: '10px', right: '10px', background: '#ff6b9d', color: 'white', padding: '5px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>NEW</span>}
-                  </div>
-                  <div className="vehicle-card-content">
-                    <h3>{vehicle.name}</h3>
-                    <p className="vehicle-type">{vehicle.type}</p>
-                    <div className="vehicle-price">
-                      <span className="price-amount">₹{vehicle.price}</span>
-                      <span className="price-period">/day</span>
+            allVehicles.length > 0 ? (
+              <div className="vehicles-grid">
+                {allVehicles.map((vehicle) => (
+                  <div key={vehicle.id} className="vehicle-card-home">
+                    <div className="vehicle-image-wrapper">
+                      <img
+                        src={getVehicleImageUrl(vehicle)}
+                        alt={vehicle.name}
+                        onError={(e) => {
+                          e.target.src = '/images/background_image.png';
+                        }}
+                      />
                     </div>
-                    <button className="btn-rent-now" onClick={() => navigate('/login')}>
-                      Rent Now
-                    </button>
+                    <div className="vehicle-card-content">
+                      <h3>{vehicle.name}</h3>
+                      <p className="vehicle-type">{vehicle.type}</p>
+                      <div className="vehicle-price">
+                        <span className="price-amount">₹{vehicle.price}</span>
+                        <span className="price-period">/day</span>
+                      </div>
+                      <button className="btn-rent-now" onClick={() => navigate('/login')}>
+                        Rent Now
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="loading-message" style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
+                No vehicles available right now.
+              </div>
+            )
           )}
         </div>
       </section>

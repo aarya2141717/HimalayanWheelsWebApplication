@@ -17,9 +17,20 @@ const AdminDashboard = () => {
   const [vehicles, setVehicles] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showAddVehicleModal, setShowAddVehicleModal] = useState(false);
   const [showEditVehicleModal, setShowEditVehicleModal] = useState(false);
   const [editVehicle, setEditVehicle] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [editImagePreview, setEditImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [newVehicle, setNewVehicle] = useState({
+    name: '',
+    type: 'Bike',
+    price: '',
+    specs: '',
+    description: '',
+    image: null,
+  });
 
   useEffect(() => {
     fetchData();
@@ -66,9 +77,80 @@ const AdminDashboard = () => {
     }
   };
 
+  const getVehicleImageUrl = (vehicle) => {
+    if (vehicle?.image) {
+      const img = vehicle.image;
+      if (img.startsWith('http')) return img;
+      if (img.startsWith('/uploads')) return `http://localhost:5000${img}`;
+      return `http://localhost:5000/uploads/vehicles/${img}`;
+    }
+    return '/images/background_image.png';
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setNewVehicle({ ...newVehicle, image: file });
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddVehicle = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('name', newVehicle.name);
+      formData.append('type', newVehicle.type);
+      formData.append('price', newVehicle.price);
+      formData.append('specs', newVehicle.specs);
+      formData.append('description', newVehicle.description);
+      if (newVehicle.image) {
+        formData.append('image', newVehicle.image);
+      }
+
+      await vehicleAPI.addVehicle(formData);
+      await fetchData();
+
+      setShowAddVehicleModal(false);
+      setNewVehicle({ name: '', type: 'Bike', price: '', specs: '', description: '', image: null });
+      setImagePreview(null);
+      alert('Vehicle added successfully!');
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      alert(error.response?.data?.message || 'Failed to add vehicle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const openEditVehicle = (vehicle) => {
     setEditVehicle({ ...vehicle, image: null });
+    setEditImagePreview(getVehicleImageUrl(vehicle));
     setShowEditVehicleModal(true);
+  };
+
+  const handleEditImageChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      return;
+    }
+
+    setEditVehicle({ ...editVehicle, image: file });
+    const reader = new FileReader();
+    reader.onloadend = () => setEditImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleUpdateVehicle = async (e) => {
@@ -86,6 +168,7 @@ const AdminDashboard = () => {
       await vehicleAPI.updateVehicle(editVehicle.id, formData);
       await fetchData();
       setShowEditVehicleModal(false);
+      setEditImagePreview(null);
       alert('Vehicle updated successfully');
     } catch (error) {
       console.error('Error updating vehicle:', error);
@@ -219,14 +302,29 @@ const AdminDashboard = () => {
         <div className="sidebar-section">
           {/* All Vehicles */}
           <div className="sidebar-card">
-            <h3 className="sidebar-title">All Vehicles ({vehicles.length})</h3>
+            <div className="section-header" style={{ marginBottom: '1rem' }}>
+              <h3 className="sidebar-title" style={{ marginBottom: 0 }}>All Vehicles ({vehicles.length})</h3>
+              <button className="btn-add-vehicle" onClick={() => setShowAddVehicleModal(true)}>
+                + Add
+              </button>
+            </div>
             {vehicles.length > 0 ? (
               <div className="bookings-list">
-                {vehicles.slice(0, 5).map((vehicle) => (
+                {vehicles.map((vehicle) => (
                   <div key={vehicle.id} className="booking-item">
+                    <div className="vehicle-image-container" style={{ marginBottom: '0.75rem' }}>
+                      <img
+                        src={getVehicleImageUrl(vehicle)}
+                        alt={vehicle.name}
+                        className="vehicle-image"
+                        onError={(e) => {
+                          e.target.src = '/images/background_image.png';
+                        }}
+                      />
+                    </div>
                     <div className="booking-header">
                       <span className="booking-vehicle">{vehicle.name}</span>
-                      <span className={`booking-status ${vehicle.available ? 'status-confirmed' : 'status-cancelled'}`}>
+                      <span className={`booking-status admin-vehicle-status ${vehicle.available ? 'status-confirmed' : 'status-cancelled'}`}>
                         {vehicle.available ? 'Available' : 'Unavailable'}
                       </span>
                     </div>
@@ -251,6 +349,7 @@ const AdminDashboard = () => {
           <div className="sidebar-card">
             <h3 className="sidebar-title">Admin Actions</h3>
             <div className="quick-actions">
+              <button className="action-btn" onClick={() => setShowAddVehicleModal(true)}>Add vehicle</button>
               <button className="action-btn" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>Back to top</button>
               <button className="action-btn" onClick={() => navigate('/')}>Go to homepage</button>
               <button className="action-btn" onClick={() => window.location.reload()}>Refresh data</button>
@@ -283,7 +382,7 @@ const AdminDashboard = () => {
               <div style={{ marginTop: '1.5rem' }}>
                 <h4>Select New Status:</h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-                  <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }} onClick={() => updateStatus('Confirmed')}>Confirmed</button>
+                  <button className="btn-primary" style={{ background: '#eaf7ef', color: '#1f7a3d', border: '1px solid #c7e7d1' }} onClick={() => updateStatus('Confirmed')}>Confirmed</button>
                   <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }} onClick={() => updateStatus('Pending')}>Pending</button>
                   <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} onClick={() => updateStatus('Completed')}>Completed</button>
                   <button className="btn-primary" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }} onClick={() => updateStatus('Cancelled')}>Cancelled</button>
@@ -299,6 +398,100 @@ const AdminDashboard = () => {
         </div>
       )}
 
+      {showAddVehicleModal && (
+        <div className="modal-overlay" onClick={() => !loading && setShowAddVehicleModal(false)}>
+          <div className="modal-content vehicle-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Add New Vehicle</h2>
+              <button className="modal-close" onClick={() => !loading && setShowAddVehicleModal(false)} disabled={loading}>×</button>
+            </div>
+            <form onSubmit={handleAddVehicle}>
+              <div className="modal-body">
+                <div className="form-group image-upload-section">
+                  <label>Vehicle Image</label>
+                  <div className="image-upload-container">
+                    <input
+                      type="file"
+                      id="adminVehicleImage"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="adminVehicleImage" className="image-upload-label">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Preview" className="image-preview" />
+                      ) : (
+                        <div className="upload-placeholder">
+                          <span className="upload-icon">📷</span>
+                          <span>Click to upload image</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vehicle Name *</label>
+                    <input
+                      type="text"
+                      value={newVehicle.name}
+                      onChange={(e) => setNewVehicle({ ...newVehicle, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Vehicle Type *</label>
+                    <select
+                      value={newVehicle.type}
+                      onChange={(e) => setNewVehicle({ ...newVehicle, type: e.target.value })}
+                      required
+                    >
+                      <option value="Bike">Bike</option>
+                      <option value="Scooter">Scooter</option>
+                      <option value="Car">Car</option>
+                      <option value="SUV">SUV</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Price per day (₹) *</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newVehicle.price}
+                      onChange={(e) => setNewVehicle({ ...newVehicle, price: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Specs</label>
+                    <input
+                      type="text"
+                      value={newVehicle.specs}
+                      onChange={(e) => setNewVehicle({ ...newVehicle, specs: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    rows="3"
+                    value={newVehicle.description}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, description: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button className="btn-secondary" type="button" onClick={() => setShowAddVehicleModal(false)} disabled={loading}>Cancel</button>
+                <button className="btn-primary" type="submit" disabled={loading}>{loading ? 'Adding...' : 'Add Vehicle'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showEditVehicleModal && editVehicle && (
         <div className="modal-overlay" onClick={() => !loading && setShowEditVehicleModal(false)}>
           <div className="modal-content vehicle-modal" onClick={(e) => e.stopPropagation()}>
@@ -308,6 +501,28 @@ const AdminDashboard = () => {
             </div>
             <form onSubmit={handleUpdateVehicle}>
               <div className="modal-body">
+                <div className="form-group image-upload-section">
+                  <label>Vehicle Image</label>
+                  <div className="image-upload-container">
+                    <input
+                      type="file"
+                      id="adminEditVehicleImage"
+                      accept="image/*"
+                      onChange={handleEditImageChange}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="adminEditVehicleImage" className="image-upload-label">
+                      {editImagePreview ? (
+                        <img src={editImagePreview} alt="Preview" className="image-preview" />
+                      ) : (
+                        <div className="upload-placeholder">
+                          <span className="upload-icon">📷</span>
+                          <span>Click to upload image</span>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label>Vehicle Name *</label>

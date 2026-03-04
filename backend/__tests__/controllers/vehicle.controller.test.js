@@ -50,6 +50,18 @@ describe('Vehicle controller (essential)', () => {
     expect(Vehicle.create).toHaveBeenCalled();
   });
 
+  test('creates vehicle for admin', async () => {
+    req.user.role = 'admin';
+    req.user.accountType = 'CUSTOMER';
+    req.body = { name: 'Admin Bike', type: 'Bike', price: 300 };
+    Vehicle.create = jest.fn().mockResolvedValue({ id: 11, ...req.body, providerId: 1 });
+
+    await addVehicle(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    expect(Vehicle.create).toHaveBeenCalled();
+  });
+
   test('returns 404 for update with non-existent id', async () => {
     req.params.id = '999';
     Vehicle.findOne = jest.fn().mockResolvedValue(null);

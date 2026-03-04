@@ -33,15 +33,18 @@ export const getProviderVehicles = async (req, res) => {
   }
 };
 
-// Add new vehicle (provider only)
+// Add new vehicle (provider or admin)
 export const addVehicle = async (req, res) => {
   try {
     const providerId = req.user.id;
     const { name, type, price, specs, description } = req.body;
 
-    // Check if user is a provider
-    if (req.user.accountType !== "PROVIDER") {
-      return res.status(403).json({ message: "Only providers can add vehicles" });
+    // Allow providers and admins to add vehicles
+    const isProvider = req.user.accountType === "PROVIDER";
+    const isAdmin = req.user.role === "admin";
+
+    if (!isProvider && !isAdmin) {
+      return res.status(403).json({ message: "Only providers or admins can add vehicles" });
     }
 
     // Handle image upload

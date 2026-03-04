@@ -74,26 +74,10 @@ const CustomerDashboard = () => {
     fetchStats();
   }, []);
 
-  // Default vehicles (ensure they also appear even if DB is empty)
-  const defaultVehicles = [
-    { name: 'Royal Enfield Himalayan', type: 'Bike', price: 1500, specs: '411cc, Adventure Bike', description: 'Adventure bike' },
-    { name: 'Mahindra Thar', type: 'SUV', price: 5000, specs: '4WD, 5 Seater', description: 'Rugged SUV' },
-    { name: 'KTM Duke 390', type: 'Bike', price: 1800, specs: '373cc, Sport Bike', description: 'Performance bike' },
-    { name: 'Honda Activa', type: 'Scooter', price: 800, specs: '110cc, Automatic', description: 'City scooter' },
-    { name: 'Maruti Suzuki Swift', type: 'Car', price: 3000, specs: 'Manual, 5 Seater', description: 'Compact car' },
-  ];
-
   const fetchVehicles = async () => {
     try {
       const response = await vehicleAPI.getAllVehicles();
-      const dbVehicles = response.data || [];
-      // Merge defaults + db (avoid duplicates by name)
-      const namesInDb = new Set(dbVehicles.map(v => v.name));
-      const merged = [
-        ...dbVehicles,
-        ...defaultVehicles.filter(v => !namesInDb.has(v.name))
-      ];
-      setVehicles(merged);
+      setVehicles(response.data || []);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
     }

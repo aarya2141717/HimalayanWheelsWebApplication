@@ -8,10 +8,12 @@ import vehicleRoutes from '../../routes/vehicleRoutes.js';
 describe('Vehicle routes (essential)', () => {
   let app;
   let token;
+  let adminToken;
 
   beforeAll(() => {
     process.env.JWT_SECRET = 'test-jwt-secret';
     token = jwt.sign({ id: 1, role: 'user', accountType: 'PROVIDER' }, process.env.JWT_SECRET);
+    adminToken = jwt.sign({ id: 99, role: 'admin', accountType: 'CUSTOMER' }, process.env.JWT_SECRET);
 
     app = express();
     app.use(express.json());
@@ -47,6 +49,17 @@ describe('Vehicle routes (essential)', () => {
       .post('/api/vehicles')
       .set('Authorization', `Bearer ${token}`)
       .send({ name: 'Ntorq', type: 'Scooter', price: 150 });
+
+    expect(res.status).toBe(201);
+    expect(res.body.message).toBe('Vehicle added successfully');
+  });
+
+  test('POST /api/vehicles allows admin to create vehicle', async () => {
+    Vehicle.create = jest.fn().mockResolvedValue({ id: 6, name: 'Admin Added Car' });
+    const res = await request(app)
+      .post('/api/vehicles')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Admin Added Car', type: 'Car', price: 250 });
 
     expect(res.status).toBe(201);
     expect(res.body.message).toBe('Vehicle added successfully');
